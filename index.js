@@ -36,6 +36,82 @@ const unknownEndpoint = (request, response) => {
   response.status(404).send({ error: "unknown endpoint" });
 };
 
+app.put("/api/persons/:id", (request, response, next) => {
+  const body = request.body;
+  const person = {
+    number: body.number,
+  };
+
+  Person.findByIdAndUpdate(request.params.id, person, { new: true })
+    .then((updatedPerson) => {
+      response.json(updatedPerson);
+    })
+    .catch((error) => next(error));
+});
+
+morgan.token("postData", (request) => {
+  if (request.method == "POST") return " " + JSON.stringify(request.body);
+  else return " ";
+});
+
+app.use(
+  morgan(
+    ":method :url :status :res[content-length] - :response-time ms :postData"
+  )
+);
+app.get("/", (request, response) => {
+  response.send("<h1>Hello World change!</h1>");
+});
+
+app.get("/api/persons", (request, response) => {
+  PhoneBook.find({}).then((entries) => {
+    response.json(entries);
+  });
+});
+
+app.get("/info", (request, response) => {
+  numberOfPeople = persons.length;
+
+  const currentTime = new Date().toLocaleString();
+
+  response.send(
+    `<p>Phonebook has info for ${numberOfPeople} people</p><br/><p>${currentTime}</p>`
+  );
+});
+
+app.get("/api/persons/:id", (request, response, next) => {
+  const id = request.params.id;
+  PhoneBook.findById(id) // Use your database method to find by ID
+    .then((person) => {
+      if (person) {
+        response.json(person);
+      } else {
+        response.status(404).end();
+      }
+    })
+
+    .catch((error) => next(error));
+
+  // .catch((error) => {
+  //   console.error(error);
+  //   response.status(400).send({ error: "malformatted id" });
+  // });
+});
+
+app.delete("/api/persons/:id", (request, response, next) => {
+  PhoneBook.findByIdAndDelete(request.params.id)
+    .then((result) => {
+      response.status(204).end();
+    })
+    .catch((error) => next(error));
+});
+
+app.use(unknownEndpoint);
+app.use(errorHandler);
+
+const PORT = process.env.PORT;
+app.listen(PORT);
+console.log(`Server running on port ${PORT}`);
 // Middleware to check for existing entry by name
 // const checkExistingEntry = (req, res, next) => {
 //   const { name, number } = req.body;
@@ -56,19 +132,6 @@ const unknownEndpoint = (request, response) => {
 //     })
 //     .catch((error) => next(error));
 // };
-
-app.put("/api/persons/:id", (request, response, next) => {
-  const body = request.body;
-  const person = {
-    number: body.number,
-  };
-
-  Person.findByIdAndUpdate(request.params.id, person, { new: true })
-    .then((updatedPerson) => {
-      response.json(updatedPerson);
-    })
-    .catch((error) => next(error));
-});
 
 // // POST route to add a new person
 // app.post("/api/persons", checkExistingEntry, (request, response) => {
@@ -149,20 +212,6 @@ app.put("/api/persons/:id", (request, response, next) => {
 //     .catch((error) => next(error));
 // };
 
-morgan.token("postData", (request) => {
-  if (request.method == "POST") return " " + JSON.stringify(request.body);
-  else return " ";
-});
-
-app.use(
-  morgan(
-    ":method :url :status :res[content-length] - :response-time ms :postData"
-  )
-);
-app.get("/", (request, response) => {
-  response.send("<h1>Hello World change!</h1>");
-});
-
 // app.post("/api/persons", (request, response) => {
 //   const body = request.body;
 //   console.log(body.name);
@@ -182,46 +231,11 @@ app.get("/", (request, response) => {
 //   });
 // });
 
-app.get("/api/persons", (request, response) => {
-  PhoneBook.find({}).then((entries) => {
-    response.json(entries);
-  });
-});
-
-app.get("/info", (request, response) => {
-  numberOfPeople = persons.length;
-
-  const currentTime = new Date().toLocaleString();
-
-  response.send(
-    `<p>Phonebook has info for ${numberOfPeople} people</p><br/><p>${currentTime}</p>`
-  );
-});
-
 // app.get("/persons/:id", (request, response) => {
 //   PhoneBook.findById(request.params.id).then((person) => {
 //     response.json(person);
 //   });
 // });
-
-app.get("/api/persons/:id", (request, response, next) => {
-  const id = request.params.id;
-  PhoneBook.findById(id) // Use your database method to find by ID
-    .then((person) => {
-      if (person) {
-        response.json(person);
-      } else {
-        response.status(404).end();
-      }
-    })
-
-    .catch((error) => next(error));
-
-  // .catch((error) => {
-  //   console.error(error);
-  //   response.status(400).send({ error: "malformatted id" });
-  // });
-});
 
 // app.delete("/api/persons/:id", (request, response) => {
 //   const id = request.params.id;
@@ -246,18 +260,3 @@ app.get("/api/persons/:id", (request, response, next) => {
 //   // Respond with 204 No Content status
 //   response.status(204).end();
 // });
-
-app.delete("/api/persons/:id", (request, response, next) => {
-  PhoneBook.findByIdAndDelete(request.params.id)
-    .then((result) => {
-      response.status(204).end();
-    })
-    .catch((error) => next(error));
-});
-
-app.use(unknownEndpoint);
-app.use(errorHandler);
-
-const PORT = process.env.PORT;
-app.listen(PORT);
-console.log(`Server running on port ${PORT}`);
