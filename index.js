@@ -1,6 +1,7 @@
+require("dotenv").config();
+
 const express = require("express");
 const app = express();
-require("dotenv").config();
 
 const PhoneBook = require("./models/phoneBook");
 
@@ -222,28 +223,36 @@ app.get("/api/persons/:id", (request, response, next) => {
   // });
 });
 
-app.delete("/api/persons/:id", (request, response) => {
-  const id = request.params.id;
-  console.log(`DELETE request received for ID: ${id}`);
+// app.delete("/api/persons/:id", (request, response) => {
+//   const id = request.params.id;
+//   console.log(`DELETE request received for ID: ${id}`);
 
-  // Check if the ID is present in the array before deleting
-  const personToDelete = persons.find((person) => person.id === id);
+//   // Check if the ID is present in the array before deleting
+//   const personToDelete = persons.find((person) => person.id === id);
 
-  if (!personToDelete) {
-    console.log(`No person found with ID: ${id}`);
-    return response.status(404).json({ error: "Person not found" });
-  }
+//   if (!personToDelete) {
+//     console.log(`No person found with ID: ${id}`);
+//     return response.status(404).json({ error: "Person not found" });
+//   }
 
-  // Filter out the person with the matching ID
-  persons = persons.filter((person) => person.id !== id);
-  console.log(
-    `Person with ID ${id} deleted. Updated persons list: ${JSON.stringify(
-      persons
-    )}`
-  );
+//   // Filter out the person with the matching ID
+//   persons = persons.filter((person) => person.id !== id);
+//   console.log(
+//     `Person with ID ${id} deleted. Updated persons list: ${JSON.stringify(
+//       persons
+//     )}`
+//   );
 
-  // Respond with 204 No Content status
-  response.status(204).end();
+//   // Respond with 204 No Content status
+//   response.status(204).end();
+// });
+
+app.delete("/api/persons/:id", (request, response, next) => {
+  PhoneBook.findByIdAndDelete(request.params.id)
+    .then((result) => {
+      response.status(204).end();
+    })
+    .catch((error) => next(error));
 });
 
 app.use(unknownEndpoint);
