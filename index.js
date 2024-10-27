@@ -36,15 +36,34 @@ const unknownEndpoint = (request, response) => {
   response.status(404).send({ error: "unknown endpoint" });
 };
 
-app.put("/api/persons/:id", (request, response, next) => {
-  const body = request.body;
-  const person = {
-    number: body.number,
-  };
+app.post("/api/persons", (request, response, next) => {
+  const { name, number } = request.body;
+  console.log(" 500 app.post api/persons");
+  const newPerson = new PhoneBook({ name, number });
+  newPerson
+    .save()
+    .then((savedEntry) => {
+      response.status(201).json(savedEntry);
+    })
+    .catch((error) => next(error));
+});
 
-  Person.findByIdAndUpdate(request.params.id, person, { new: true })
-    .then((updatedPerson) => {
-      response.json(updatedPerson);
+app.put("/api/persons/:id", (request, response, next) => {
+  const { id } = request.params;
+  const { name, number } = request.body;
+
+  PhoneBook.findByIdAndUpdate(
+    id,
+    { name, number },
+    { new: true, runValidators: true }
+  )
+    .then((updatedEntry) => {
+      console.log("updatedEntry", updatedEntry);
+      if (updatedEntry) {
+        response.json(updatedEntry);
+      } else {
+        response.status(404).send({ error: "Person not found" });
+      }
     })
     .catch((error) => next(error));
 });
@@ -91,11 +110,6 @@ app.get("/api/persons/:id", (request, response, next) => {
     })
 
     .catch((error) => next(error));
-
-  // .catch((error) => {
-  //   console.error(error);
-  //   response.status(400).send({ error: "malformatted id" });
-  // });
 });
 
 app.delete("/api/persons/:id", (request, response, next) => {
@@ -112,151 +126,3 @@ app.use(errorHandler);
 const PORT = process.env.PORT;
 app.listen(PORT);
 console.log(`Server running on port ${PORT}`);
-// Middleware to check for existing entry by name
-// const checkExistingEntry = (req, res, next) => {
-//   const { name, number } = req.body;
-
-//   if (!name || !number) {
-//     return res.status(400).json({ error: "Name or number missing" });
-//   }
-
-//   PhoneBook.findOne({ name })
-//     .then((existingEntry) => {
-//       if (existingEntry) {
-//         // Entry exists, proceed to update
-//         req.existingEntry = existingEntry;
-//         return next();
-//       }
-//       // If entry does not exist, create a new one
-//       next("route");
-//     })
-//     .catch((error) => next(error));
-// };
-
-// // POST route to add a new person
-// app.post("/api/persons", checkExistingEntry, (request, response) => {
-//   const { name, number } = request.body;
-
-//   const newPerson = new PhoneBook({ name, number });
-//   newPerson
-//     .save()
-//     .then((savedEntry) => {
-//       response.status(201).json(savedEntry);
-//     })
-//     .catch((error) => next(error));
-// });
-
-// // PUT route to update an existing person
-// app.put("/api/persons", (request, response) => {
-//   const { existingEntry } = request;
-//   const { number } = request.body;
-
-//   if (existingEntry) {
-//     existingEntry.number = number; // Update number
-//     existingEntry
-//       .save()
-//       .then((updatedEntry) => {
-//         response.json(updatedEntry);
-//       })
-//       .catch((error) => next(error));
-//   } else {
-//     response.status(404).send({ error: "Person not found" });
-//   }
-// });
-
-// const checkExistingEntry = (req, res, next) => {
-//   const { name, number } = req.body;
-
-//   if (!name || !number) {
-//     return res.status(400).json({ error: "Name or number missing" });
-//   }
-
-// // POST route to add a new person
-// app.post("/api/persons", (request, response) => {
-//   const { name, number } = request.body;
-
-//   // Check if name or number is missing
-//   if (!name || !number) {
-//     return response.status(400).json({ error: "Name or number missing" });
-//   }
-
-//   // Check if name already exists
-//   const nameExists = persons.some((person) => person.name === name);
-//   if (nameExists) {
-//     return response.status(400).json({ error: "Name must be unique" });
-//   }
-
-//   // Generate a new id
-//   const newId = (Math.random() * 1000000).toFixed(0);
-
-//   // Create the new person object
-//   const newPerson = { id: newId, name, number };
-
-//   // Add the new person to the list
-//   persons = persons.concat(newPerson);
-
-//   // Respond with the created person object
-//   response.status(201).json(newPerson);
-// });
-
-//   PhoneBook.findOne({ name })
-//     .then((existingEntry) => {
-//       if (existingEntry) {
-//         // Entry exists, proceed to update
-//         req.existingEntry = existingEntry;
-//         return next();
-//       }
-//       // If entry does not exist, create a new one
-//       next("route");
-//     })
-//     .catch((error) => next(error));
-// };
-
-// app.post("/api/persons", (request, response) => {
-//   const body = request.body;
-//   console.log(body.name);
-//   if (!body.name || !body.number) {
-//     return response
-//       .status(400)
-//       .json({ error: "Both name and number are required" });
-//   }
-
-//   const savedEntry = new PhoneBook({
-//     name: body.name,
-//     number: body.number,
-//   });
-
-//   savedEntry.save().then((entry) => {
-//     response.json(entry);
-//   });
-// });
-
-// app.get("/persons/:id", (request, response) => {
-//   PhoneBook.findById(request.params.id).then((person) => {
-//     response.json(person);
-//   });
-// });
-
-// app.delete("/api/persons/:id", (request, response) => {
-//   const id = request.params.id;
-//   console.log(`DELETE request received for ID: ${id}`);
-
-//   // Check if the ID is present in the array before deleting
-//   const personToDelete = persons.find((person) => person.id === id);
-
-//   if (!personToDelete) {
-//     console.log(`No person found with ID: ${id}`);
-//     return response.status(404).json({ error: "Person not found" });
-//   }
-
-//   // Filter out the person with the matching ID
-//   persons = persons.filter((person) => person.id !== id);
-//   console.log(
-//     `Person with ID ${id} deleted. Updated persons list: ${JSON.stringify(
-//       persons
-//     )}`
-//   );
-
-//   // Respond with 204 No Content status
-//   response.status(204).end();
-// });
