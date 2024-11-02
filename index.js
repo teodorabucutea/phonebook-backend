@@ -15,11 +15,20 @@ const requestLogger = (request, response, next) => {
   next();
 };
 
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: "unknown endpoint" });
+};
+
 const errorHandler = (error, request, response, next) => {
   console.error(error.message);
 
   if (error.name === "CastError") {
     return response.status(400).send({ error: "malformatted id" });
+  }
+
+  if (error.name === "ValidationError") {
+    console.log("got to validation error");
+    return response.status(400).json({ error: error.message });
   }
 
   next(error);
@@ -32,14 +41,13 @@ app.use(cors());
 app.use(express.json());
 app.use(requestLogger);
 
-const unknownEndpoint = (request, response) => {
-  response.status(404).send({ error: "unknown endpoint" });
-};
-
 app.post("/api/persons", (request, response, next) => {
   const { name, number } = request.body;
+
   console.log(" 500 app.post api/persons");
   const newPerson = new PhoneBook({ name, number });
+
+  // newPerson.path("number").validate(name.validate.validator, "test validation");
   newPerson
     .save()
     .then((savedEntry) => {
